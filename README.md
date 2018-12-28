@@ -17,3 +17,7 @@ to download the files as JSON.
 * `karma.py` - aggregates react counts (received) for each person
 * `largest_chats.py` - determines which of your conversations have the largest
   total number of messages.
+
+## Ideas
+
+* per-person chat frequency timeline / timeseries
