@@ -14,9 +14,9 @@ to download the files as JSON.
 
 ## Scripts
 
-* `karma.py` - aggregates react counts (received) for each person
-* `largest_chats.py` - determines which of your conversations have the largest
-  total number of messages.
+* `messenger_stats.py` - entry point into the program. Include `-f [path]` to
+  specify the path to the `messages` folder. Otherwise, the script assumes the
+  folder exists in the working directory.
 
 ## Ideas
 
