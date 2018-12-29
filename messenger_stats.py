@@ -42,10 +42,10 @@ def main():
             for i, item in enumerate(chats):
                 print(str(i) + ' ' + item)
             choice = input()
-            if not choice.isdigit() or int(i) >= len(chats):
+            if not choice.isdigit() or int(choice) >= len(chats):
                 print('Invalid selection\n')
                 continue
-            chatSelection = chats[int(i)]
+            chatSelection = chats[int(choice)]
             reactsStats(os.path.join(args.folder, chatSelection, 'message.json'))
         elif choice == 'Q':
             break
