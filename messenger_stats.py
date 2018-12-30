@@ -9,11 +9,16 @@ from conversation_stats import get_possible_chats
 from conversation_stats import conversation_stats
 from largest_chats import largest_chats
 
-SHOW_PLOTS = False          # if True, show plots. otherwise, just saves images
+SHOW_PLOTS = False          # if True, show some plots. otherwise, just saves images
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
-MIN_MESSAGE_COUNT = 10      # minimum number of messages to do individual analysis
+MIN_MESSAGE_COUNT = 50      # minimum number of messages to do individual analysis
 
 def main():
+    """
+    Excuse how ugly this function is. Aside from setup, different analysis is
+    separated into different sections. Within each section, data is generated,
+    saved, and also plots are saved.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--folder', help='root messages directory')
     args = parser.parse_args()
@@ -139,6 +144,7 @@ def subcategorybar(X, vals, width=0.8):
     for i in range(n):
         plt.bar(_X - width/2.0 + i/float(n)*width, vals[i], width=width/float(n), align="edge")   
     plt.xticks(_X, X)
+
 
 if __name__ == '__main__':
     main()

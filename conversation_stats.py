@@ -24,8 +24,7 @@ def unicode_to_react(str):
 
 def get_possible_chats(root_dir, filters=[]):
     """
-    Returns a list of the available chat groups. Manually ignores hidden files
-    and stickers_used folder.
+    Returns a list of the available chat groups. Manually ignores hidden files.
     filter is a list of strings that must be substrings of a chat folder's name
     """
     chats = os.listdir(root_dir)
@@ -98,24 +97,3 @@ def conversation_stats(MESSAGES_FILE):
         react_counts.update(newDict)
 
     return react_map, msg_count_map, char_count_map, msg_count
-    # # print results
-
-    # print('REACT STATS')
-    # print('')
-    # for person in react_map:
-    #     print(person)
-    #     print('-' * len(person))
-    #     for react in react_map[person]:
-    #         print(react + ': ' + str(react_map[person][react]))
-    #     print('')
-
-    # print('MESSAGE COUNT')
-    # print('-------------')
-    # for person in msg_count_map:
-    #     print(person + ': ' + str(msg_count_map[person]))
-
-    # print('')
-    # print('CHARACTER COUNT')
-    # print('---------------')
-    # for person in char_count_map:
-    #     print(person + ': ' + str(char_count_map[person]))
