@@ -16,7 +16,11 @@ to download the files as JSON.
 
 ## Scripts
 
+Note: all scripts in this project are assumed to be run using `python3`.
+
 * `messenger_stats.py` - entry point into the program. Include `-f [path]` to
   specify the path to the folder containing all the messages. Otherwise, the
   script assumes the folder `messages` exists in the working directory. This
   directory may need to be renamed from `inbox`.
+
+Example usage: `python3 messenger_stats.py -f path/to/inbox`
