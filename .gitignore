@@ -1,6 +1,7 @@
-# messages folders or any json data files
+# messages folder, data files, output files
 messages*
 *.json
+output
 
 # other stuff
 __pycache__
