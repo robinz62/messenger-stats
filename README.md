@@ -20,7 +20,3 @@ to download the files as JSON.
   specify the path to the folder containing all the messages. Otherwise, the
   script assumes the folder `messages` exists in the working directory. This
   directory may need to be renamed from `inbox`.
-
-## Ideas
-
-* per-person chat frequency timeline / timeseries

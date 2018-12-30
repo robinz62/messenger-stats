@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -7,9 +8,9 @@ import pprint
 
 from conversation_stats import get_possible_chats
 from conversation_stats import conversation_stats
+from conversation_time_series import get_time_series
 from largest_chats import largest_chats
 
-SHOW_PLOTS = False          # if True, show some plots. otherwise, just saves images
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
 MIN_MESSAGE_COUNT = 50      # minimum number of messages to do individual analysis
 
@@ -44,6 +45,9 @@ def main():
     ##########################
     # largest chats analyzer #
     ##########################
+    # plots:
+    # - largest conversations bar graph
+    # - conversation size frequency histogram
     all_conversations, total_msg_count = largest_chats(args.folder)
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write('\t'.join(['title', 'count']) + '\n')
@@ -55,8 +59,14 @@ def main():
     plt.bar(x, y)
     plt.title('Top Chats by Message Count')
     plt.savefig(os.path.join('output', 'graphs', 'aggregate', 'top_chats.png'), bbox_inches='tight')
-    if SHOW_PLOTS:
-        plt.show()
+    plt.close()
+    plt.figure(figsize=(14, 6.5))
+    x = [c['count'] for c in all_conversations]
+    plt.hist(x)
+    plt.title('Conversation Size Histogram')
+    plt.xlabel('Conversation Size')
+    plt.ylabel('Number of Conversations')
+    plt.savefig(os.path.join('output', 'graphs', 'aggregate', 'conversation_sizes.png'), bbox_inches='tight')
     plt.close()
 
     ######################
@@ -130,6 +140,38 @@ def main():
         subcategorybar(x, [thumbs_up, thumbs_down, laughing, heart_eyes, angry, cry, wow])
         plt.legend(['Thumbs Up', 'Thumbs Down', 'Laughing', 'Heart Eyes', 'Angry', 'Cry', 'Wow'])
         plt.savefig(os.path.join('output', 'graphs', 'individual', chat, 'react_stats.png'), bbox_inches='tight')
+        plt.close()
+
+    ###############
+    # time series #
+    ###############
+    for chat in chats:
+        try:
+            times, msg_count = get_time_series(os.path.join(args.folder, chat, 'message.json'))
+        except:
+            continue
+        
+        if msg_count < MIN_MESSAGE_COUNT:
+            continue
+        if not os.path.exists(os.path.join('output', 'graphs', 'individual', chat)):
+            os.makedirs(os.path.join('output', 'graphs', 'individual', chat))
+        # TODO: any interesting data to store?
+
+        # skip the first few 'messenger introduction' messages
+        if len(times) >= 3:
+            times = times[:-2]
+        first_time = times[-1]
+        last_time = times[0]
+        num_months = (int) ((last_time - first_time) / 2592000000 + 1)     # number of ms in 30 days
+        y, bin_edges = np.histogram(times, bins=num_months * 2)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
+        timestamps = [datetime.utcfromtimestamp(time / 1000) for time in bin_centers]
+        plt.figure(figsize=(14, 6.5))
+        plt.plot(timestamps, y)
+        plt.title('Messages over Time')
+        plt.xlabel('Date')
+        plt.ylabel('Messages per Interval (roughly half month)')
+        plt.savefig(os.path.join('output', 'graphs', 'individual', chat, 'conversation_time_series.png'), bbox_inches='tight')
         plt.close()
 
 
