@@ -25,12 +25,12 @@ def main():
     args = parser.parse_args()
 
     if not args.folder:
-        if os.path.isdir('messages'):
-            args.folder = 'messages'
+        if os.path.isdir('messages/inbox'):
+            args.folder = 'messages/inbox'
         else:
             print((
                 'Error: must specify path to messages directory or have '
-                'the messages directory in current directory'
+                'the messages/inbox directory in current directory'
             ))
             return
 
