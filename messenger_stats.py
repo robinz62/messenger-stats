@@ -12,7 +12,7 @@ from conversation_time_series import get_time_series
 from largest_chats import largest_chats
 
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
-MIN_MESSAGE_COUNT = 50      # minimum number of messages to do individual analysis
+MIN_MESSAGE_COUNT = 500      # minimum number of messages to do individual analysis
 
 def main():
     """
@@ -48,7 +48,9 @@ def main():
     # plots:
     # - largest conversations bar graph
     # - conversation size frequency histogram
+    print('finding largest chats')
     all_conversations, total_msg_count = largest_chats(args.folder)
+    print('making graphs')
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write('\t'.join(['title', 'count']) + '\n')
         for c in all_conversations:
@@ -68,11 +70,13 @@ def main():
     plt.ylabel('Number of Conversations')
     plt.savefig(os.path.join('output', 'graphs', 'aggregate', 'conversation_sizes.png'), bbox_inches='tight')
     plt.close()
-
+    print('done aggregate')
     ######################
     # conversation stats #
     ######################
+    
     chats = get_possible_chats(args.folder)
+    '''
     for chat in chats:
         try:
             react_map, msg_count_map, char_count_map, msg_count = conversation_stats(os.path.join(args.folder, chat, 'message.json'))
@@ -141,10 +145,11 @@ def main():
         plt.legend(['Thumbs Up', 'Thumbs Down', 'Laughing', 'Heart Eyes', 'Angry', 'Cry', 'Wow'])
         plt.savefig(os.path.join('output', 'graphs', 'individual', chat, 'react_stats.png'), bbox_inches='tight')
         plt.close()
-
+    '''
     ###############
     # time series #
     ###############
+    print('time series')
     for chat in chats:
         try:
             times, msg_count = get_time_series(os.path.join(args.folder, chat, 'message.json'))
