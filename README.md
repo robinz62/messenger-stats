@@ -5,7 +5,7 @@ Note that data downloaded to Facebook will not contain messages you deleted
 yourself (e.g. it is possible for you and your friend to have different
 message counts for the same conversation).
 
-This README is based on the data format as of Jan 2019.
+This README is based on the data format as of Feb 2019.
 
 ## Downloading Facebook Messenger Data
 
@@ -20,7 +20,11 @@ Note: all scripts in this project are assumed to be run using `python3`.
 
 * `messenger_stats.py` - entry point into the program. Include `-f [path]` to
   specify the path to the folder containing all the messages. Otherwise, the
-  script assumes the folder `messages` exists in the working directory. This
-  directory may need to be renamed from `inbox`.
+  script assumes the folder `messages/inbox` exists in the working directory.
 
 Example usage: `python3 messenger_stats.py -f path/to/inbox`
+
+## Ideas
+
+* Participant activity pie chart
+* Reacts given
