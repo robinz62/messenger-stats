@@ -1,3 +1,4 @@
+
 import argparse
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -10,57 +11,44 @@ from conversation_stats import get_possible_chats
 from conversation_stats import conversation_stats
 from conversation_time_series import get_time_series
 from largest_chats import largest_chats
-
+from largest_chats import JSON_NAME
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
 MIN_MESSAGE_COUNT = 500      # minimum number of messages to do individual analysis
 
-def main():
-    """
-    Excuse how ugly this function is. Aside from setup, different analysis is
-    separated into different sections. Within each section, data is generated,
-    saved, and also plots are saved.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--folder', help='root messages directory')
-    args = parser.parse_args()
 
-    if not args.folder:
-        if os.path.isdir('messages/inbox'):
-            args.folder = 'messages/inbox'
-        else:
-            print((
-                'Error: must specify path to messages directory or have '
-                'the messages/inbox directory in current directory'
-            ))
-            return
+def chatToString(chat):
+    s = chat['title'] + '\n'
+    s += 'total messages: ' + str(chat['count']) + '\n'
+    for person in chat['chars']:
+        s += "----- " + person + ' ----- :\n'
+        for stat in chat['chars'][person]:
+            s += "'" + str(stat) + "':" + \
+                str(chat['chars'][person][stat]) + '\n'
+    s += '****************************************************\n'
+    return s
 
-    # create output dirs, deleting old if exists
-    if os.path.isdir('output'):
-        shutil.rmtree('output')
-    os.makedirs(os.path.join('output', 'data', 'aggregate'))
-    os.makedirs(os.path.join('output', 'data', 'individual'))
-    os.makedirs(os.path.join('output', 'graphs', 'aggregate'))
-    os.makedirs(os.path.join('output', 'graphs', 'individual'))
-    
-    ##########################
+
+def largestChatAnalyzer(folderDir):
+       ##########################
     # largest chats analyzer #
     ##########################
     # plots:
     # - largest conversations bar graph
     # - conversation size frequency histogram
     print('finding largest chats')
-    all_conversations, total_msg_count = largest_chats(args.folder)
+    all_conversations, total_msg_count = largest_chats(folderDir)
     print('making graphs')
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write('\t'.join(['title', 'count']) + '\n')
         for c in all_conversations:
-            f.write('\t'.join([c['title'], str(c['count'])]) + '\n')
+            f.write(chatToString(c) + '\n')
     x = [c['title'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
     y = [c['count'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
     plt.figure(figsize=(14, 6.5))
     plt.bar(x, y)
     plt.title('Top Chats by Message Count')
-    plt.savefig(os.path.join('output', 'graphs', 'aggregate', 'top_chats.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('output', 'graphs', 'aggregate',
+                             'top_chats.png'), bbox_inches='tight')
     plt.close()
     plt.figure(figsize=(14, 6.5))
     x = [c['count'] for c in all_conversations]
@@ -68,21 +56,27 @@ def main():
     plt.title('Conversation Size Histogram')
     plt.xlabel('Conversation Size')
     plt.ylabel('Number of Conversations')
-    plt.savefig(os.path.join('output', 'graphs', 'aggregate', 'conversation_sizes.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('output', 'graphs', 'aggregate',
+                             'conversation_sizes.png'), bbox_inches='tight')
     plt.close()
     print('done aggregate')
+    return
+
+
+def conversationAnalyzer(chats, folderDir):
     ######################
     # conversation stats #
     ######################
-    
-    chats = get_possible_chats(args.folder)
-    '''
+
+    print(len(chats))
+
     for chat in chats:
         try:
-            react_map, msg_count_map, char_count_map, msg_count = conversation_stats(os.path.join(args.folder, chat, 'message.json'))
+            react_map, msg_count_map, char_count_map, msg_count = conversation_stats(
+                os.path.join(folderDir, chat, 'message.json'))
         except:
             continue
-        
+
         if msg_count < MIN_MESSAGE_COUNT:
             continue
         os.makedirs(os.path.join('output', 'data', 'individual', chat))
@@ -99,8 +93,9 @@ def main():
                 'wow',
                 'msg_count',
                 'char_count',
-                ]) + '\n')
+            ]) + '\n')
             for person in react_map:
+                freeusfromthisworld2
                 thumbs_up = react_map[person].get('Thumbs Up', 0)
                 thumbs_down = react_map[person].get('Thumbs Down', 0)
                 laughing = react_map[person].get('Laughing', 0)
@@ -141,21 +136,27 @@ def main():
             wow.append(react_map[person].get('Wow', 0))
         plt.figure(figsize=(14, 6.5))
         plt.title('Reacts Received')
-        subcategorybar(x, [thumbs_up, thumbs_down, laughing, heart_eyes, angry, cry, wow])
-        plt.legend(['Thumbs Up', 'Thumbs Down', 'Laughing', 'Heart Eyes', 'Angry', 'Cry', 'Wow'])
-        plt.savefig(os.path.join('output', 'graphs', 'individual', chat, 'react_stats.png'), bbox_inches='tight')
+        subcategorybar(x, [thumbs_up, thumbs_down, laughing,
+                           heart_eyes, angry, cry, wow])
+        plt.legend(['Thumbs Up', 'Thumbs Down', 'Laughing',
+                    'Heart Eyes', 'Angry', 'Cry', 'Wow'])
+        plt.savefig(os.path.join('output', 'graphs', 'individual',
+                                 chat, 'react_stats.png'), bbox_inches='tight')
         plt.close()
-    '''
+
+
+def timeSeriesAnalyzer(chats, folderDir):
     ###############
     # time series #
     ###############
     print('time series')
     for chat in chats:
         try:
-            times, msg_count = get_time_series(os.path.join(args.folder, chat, 'message.json'))
+            times, msg_count = get_time_series(
+                os.path.join(folderDir, chat, JSON_NAME))
         except:
             continue
-        
+
         if msg_count < MIN_MESSAGE_COUNT:
             continue
         if not os.path.exists(os.path.join('output', 'graphs', 'individual', chat)):
@@ -167,17 +168,41 @@ def main():
             times = times[:-2]
         first_time = times[-1]
         last_time = times[0]
-        num_months = (int) ((last_time - first_time) / 2592000000 + 1)     # number of ms in 30 days
+        num_months = (int)((last_time - first_time) /
+                           2592000000 + 1)     # number of ms in 30 days
         y, bin_edges = np.histogram(times, bins=num_months * 2)
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
-        timestamps = [datetime.utcfromtimestamp(time / 1000) for time in bin_centers]
+        timestamps = [datetime.utcfromtimestamp(
+            time / 1000) for time in bin_centers]
         plt.figure(figsize=(14, 6.5))
         plt.plot(timestamps, y)
         plt.title('Messages over Time')
         plt.xlabel('Date')
         plt.ylabel('Messages per Interval (roughly half month)')
-        plt.savefig(os.path.join('output', 'graphs', 'individual', chat, 'conversation_time_series.png'), bbox_inches='tight')
+        plt.savefig(os.path.join('output', 'graphs', 'individual',
+                                 chat, 'conversation_time_series.png'), bbox_inches='tight')
         plt.close()
+
+
+def setupDirTree(folderDir):
+    if not folderDir:
+        if os.path.isdir('messages/inbox'):
+            folderDir = 'messages/inbox'
+        else:
+            print((
+                'Error: must specify path to messages directory or have '
+                'the messages/inbox directory in current directory'
+            ))
+            return
+
+    # create output dirs, deleting old if exists
+    if os.path.isdir('output'):
+        shutil.rmtree('output')
+    os.makedirs(os.path.join('output', 'data', 'aggregate'))
+    os.makedirs(os.path.join('output', 'data', 'individual'))
+    os.makedirs(os.path.join('output', 'graphs', 'aggregate'))
+    os.makedirs(os.path.join('output', 'graphs', 'individual'))
+    return folderDir
 
 
 def subcategorybar(X, vals, width=0.8):
@@ -189,8 +214,26 @@ def subcategorybar(X, vals, width=0.8):
     n = len(vals)
     _X = np.arange(len(X))
     for i in range(n):
-        plt.bar(_X - width/2.0 + i/float(n)*width, vals[i], width=width/float(n), align="edge")   
+        plt.bar(_X - width/2.0 + i/float(n)*width,
+                vals[i], width=width/float(n), align="edge")
     plt.xticks(_X, X)
+
+
+def main():
+    """
+    Excuse how ugly this function is. Aside from setup, different analysis is
+    separated into different sections. Within each section, data is generated,
+    saved, and also plots are saved.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--folder', help='root messages directory')
+    args = parser.parse_args()
+
+    folderDir = setupDirTree(args.folder)
+    chats = get_possible_chats(folderDir)
+    largestChatAnalyzer(folderDir)
+    # conversationAnalyzer(folderDir, folderDir)
+    timeSeriesAnalyzer(chats, folderDir)
 
 
 if __name__ == '__main__':
