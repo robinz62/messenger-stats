@@ -14,6 +14,8 @@ from largest_chats import largest_chats
 from largest_chats import JSON_NAME
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
 MIN_MESSAGE_COUNT = 500      # minimum number of messages to do individual analysis
+TIME_INTERVAL = 14          # number of days for time interval analysis
+MICROSECONDS_PER_DAY = 86400000
 
 
 def chatToString(chat):
@@ -28,7 +30,7 @@ def chatToString(chat):
     return s
 
 
-def largestChatAnalyzer(folderDir):
+def largestChatAnalyzer(folderDir, startDate=None, endDate=None):
        ##########################
     # largest chats analyzer #
     ##########################
@@ -36,7 +38,8 @@ def largestChatAnalyzer(folderDir):
     # - largest conversations bar graph
     # - conversation size frequency histogram
     print('finding largest chats')
-    all_conversations, total_msg_count = largest_chats(folderDir)
+    all_conversations, total_msg_count = largest_chats(
+        folderDir, startDate, endDate)
     print('making graphs')
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write('\t'.join(['title', 'count']) + '\n')
@@ -46,7 +49,8 @@ def largestChatAnalyzer(folderDir):
     y = [c['count'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
     plt.figure(figsize=(14, 6.5))
     plt.bar(x, y)
-    plt.title('Top Chats by Message Count')
+    plt.title('Top Chats by Message Count from ' +
+              str(startDate) + ' until ' + str(endDate))
     plt.savefig(os.path.join('output', 'graphs', 'aggregate',
                              'top_chats.png'), bbox_inches='tight')
     plt.close()
@@ -145,10 +149,11 @@ def conversationAnalyzer(chats, folderDir):
         plt.close()
 
 
-def timeSeriesAnalyzer(chats, folderDir):
+def timeSeriesAnalyzer(chats, folderDir, startDate=None, endDate=None):
     ###############
     # time series #
     ###############
+
     print('time series')
     for chat in chats:
         try:
@@ -168,17 +173,18 @@ def timeSeriesAnalyzer(chats, folderDir):
             times = times[:-2]
         first_time = times[-1]
         last_time = times[0]
-        num_months = (int)((last_time - first_time) /
-                           2592000000 + 1)     # number of ms in 30 days
-        y, bin_edges = np.histogram(times, bins=num_months * 2)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
+        num_months = int((last_time - first_time) /
+                         (TIME_INTERVAL*MICROSECONDS_PER_DAY)) + 1
+        y, bin_edges = np.histogram(times, bins=num_months)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.0
         timestamps = [datetime.utcfromtimestamp(
             time / 1000) for time in bin_centers]
         plt.figure(figsize=(14, 6.5))
         plt.plot(timestamps, y)
         plt.title('Messages over Time')
         plt.xlabel('Date')
-        plt.ylabel('Messages per Interval (roughly half month)')
+        plt.ylabel('Messages per Interval (every ' +
+                   str(TIME_INTERVAL) + ' days)')
         plt.savefig(os.path.join('output', 'graphs', 'individual',
                                  chat, 'conversation_time_series.png'), bbox_inches='tight')
         plt.close()
@@ -227,13 +233,23 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--folder', help='root messages directory')
+    parser.add_argument('-d', '--startDate',
+                        help='earliest message from this date (YYYY-MM-DD)')
+    parser.add_argument('-e', '--endDate',
+                        help='last message up to this date (YYYY-MM-DD)')
     args = parser.parse_args()
 
+    startDate = None
+    if (args.startDate):
+        startDate = datetime.strptime(args.startDate, "%Y-%m-%d")
+    endDate = None
+    if (args.endDate):
+        endDate = datetime.strptime(args.endDate, "%Y-%m-%d")
     folderDir = setupDirTree(args.folder)
     chats = get_possible_chats(folderDir)
-    largestChatAnalyzer(folderDir)
+    largestChatAnalyzer(folderDir, startDate, endDate)
     # conversationAnalyzer(folderDir, folderDir)
-    timeSeriesAnalyzer(chats, folderDir)
+    timeSeriesAnalyzer(chats, folderDir, startDate, endDate)
 
 
 if __name__ == '__main__':

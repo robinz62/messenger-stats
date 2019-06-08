@@ -1,7 +1,9 @@
 import json
 import os
 import collections
+import datetime
 JSON_NAME = 'message_1.json'
+ENDTIME = datetime.datetime.max.timestamp()*1000
 
 
 def characterCount(data):
@@ -45,7 +47,7 @@ def characterCount(data):
     return sortedDict
 
 
-def largest_chats(root_dir):
+def largest_chats(root_dir, startDate=None, endDate=None):
     """
     Computes and returns a list containing all conversations sorted in
     decreasing order by message count. Also returns the total message
@@ -59,6 +61,24 @@ def largest_chats(root_dir):
         try:
             with open(os.path.join(root_dir, chat, JSON_NAME)) as f:
                 data = json.load(f)
+            data_temp = []
+            if (startDate is None and endDate is None):
+                pass
+            else:
+                if (startDate is None):
+                    startTime = -1
+                else:
+                    startTime = startDate.timestamp()*1000
+                if (endDate is None):
+                    endTime = ENDTIME
+                else:
+                    endTime = endDate.timestamp()*1000
+                for message in data['messages']:
+                    ts = message['timestamp_ms']
+                    if (ts > startTime and ts < endTime):
+                        data_temp.append(message)
+                data['messages'] = data_temp
+
             count = len(data['messages'])
             total_msg_count += count
             if 'title' not in data:
