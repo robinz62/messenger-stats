@@ -13,7 +13,7 @@ from conversation_time_series import get_time_series
 from largest_chats import largest_chats
 from largest_chats import JSON_NAME
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
-MIN_MESSAGE_COUNT = 500      # minimum number of messages to do individual analysis
+MIN_MESSAGE_COUNT = 2500      # minimum number of messages to do individual analysis
 TIME_INTERVAL = 14          # number of days for time interval analysis
 MICROSECONDS_PER_DAY = 86400000
 
@@ -39,10 +39,14 @@ def largestChatAnalyzer(folderDir, startDate=None, endDate=None):
     # - conversation size frequency histogram
     print('finding largest chats')
     all_conversations, total_msg_count = largest_chats(
-        folderDir, startDate, endDate)
+        folderDir, startDate=startDate, endDate=endDate, minMessages=MIN_MESSAGE_COUNT)
     print('making graphs')
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
-        f.write('\t'.join(['title', 'count']) + '\n')
+        f.write("All messaging data with messages over " + str(MIN_MESSAGE_COUNT) +
+                " messages.\n")
+        f.write("Messages from " + str(startDate) + " until " + str(endDate) + "\n")
+        f.write("NOTE: 'content' refers to number of characters\n")
+        f.write("______________________________________________________________\n")
         for c in all_conversations:
             f.write(chatToString(c) + '\n')
     x = [c['title'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
