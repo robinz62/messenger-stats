@@ -12,7 +12,6 @@ from conversation_stats import conversation_stats
 from conversation_time_series import get_time_series
 from largest_chats import largest_chats
 from largest_chats import JSON_NAME
-LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
 TIME_INTERVAL = 14          # number of days for time interval analysis
 MICROSECONDS_PER_DAY = 86400000
 
@@ -20,26 +19,17 @@ MICROSECONDS_PER_DAY = 86400000
 def chatToString(chat):
     s = chat['title'] + '\n'
     s += 'total messages: ' + str(chat['count']) + '\n'
-    for person in chat['chars']:
+    s += 'total characters: ' + str(chat['chars']) + '\n'
+    for person in chat['indData']:
         s += "----- " + person + ' ----- :\n'
-        for stat in chat['chars'][person]:
+        for stat in chat['indData'][person]:
             s += "'" + str(stat) + "':" + \
-                str(chat['chars'][person][stat]) + '\n'
+                str(chat['indData'][person][stat]) + '\n'
     s += '****************************************************\n'
     return s
 
 
-def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None):
-       ##########################
-    # largest chats analyzer #
-    ##########################
-    # plots:
-    # - largest conversations bar graph
-    # - conversation size frequency histogram
-    print('finding largest chats')
-    all_conversations, total_msg_count = largest_chats(
-        folderDir, startDate=startDate, endDate=endDate, minMessages=MIN_MESSAGE_COUNT)
-    print('making graphs')
+def writeDatafile(all_conversations, MIN_MESSAGE_COUNT, startDate, endDate):
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write("All messaging data with messages over " + str(MIN_MESSAGE_COUNT) +
                 " messages.\n")
@@ -49,24 +39,52 @@ def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=No
         f.write("______________________________________________________________\n")
         for c in all_conversations:
             f.write(chatToString(c) + '\n')
+
+
+def plotMessages(all_conversations, startDate, endDate, sortby="count", LARGEST_CHATS_TOP_N=10):
+    print('making top conversation graph')
+
     x = [c['title'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
-    y = [c['count'] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
+    y = [c[sortby] for c in all_conversations[0:LARGEST_CHATS_TOP_N]]
     plt.figure(figsize=(14, 6.5))
     plt.bar(x, y)
-    plt.title('Top Chats by Message Count from ' +
+    plt.title('Top Chats by Message ' + sortby + ' from ' +
               str(startDate) + ' until ' + str(endDate))
+    plt.xlabel("Chat name")
+    plt.ylabel("Number of " + sortby + " of messages")
     plt.savefig(os.path.join('output', 'graphs', 'aggregate',
                              'top_chats.png'), bbox_inches='tight')
+
     plt.close()
+
+
+def plotHistogram(all_conversations, sortby="count"):
     plt.figure(figsize=(14, 6.5))
-    x = [c['count'] for c in all_conversations]
+    x = [c[sortby] for c in all_conversations]
     plt.hist(x)
     plt.title('Conversation Size Histogram')
-    plt.xlabel('Conversation Size')
+    plt.xlabel('Conversation Size (number of ' + sortby + ')')
     plt.ylabel('Number of Conversations')
     plt.savefig(os.path.join('output', 'graphs', 'aggregate',
                              'conversation_sizes.png'), bbox_inches='tight')
     plt.close()
+
+
+def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None, sortby="count"):
+       ##########################
+    # largest chats analyzer #
+    ##########################
+    # plots:
+    # - largest conversations bar graph
+    # - conversation size frequency histogram
+    print('finding largest chats')
+    all_conversations, total_msg_count = largest_chats(
+        folderDir, startDate=startDate, endDate=endDate, minMessages=MIN_MESSAGE_COUNT)
+
+    all_conversations.sort(key=lambda x: x[sortby], reverse=True)
+    writeDatafile(all_conversations, MIN_MESSAGE_COUNT, startDate, endDate)
+    plotMessages(all_conversations, startDate, endDate, sortby=sortby)
+    plotHistogram(all_conversations, sortby=sortby)
     print('done aggregate')
     return
 
@@ -243,6 +261,8 @@ def main():
                         help='last message up to this date (YYYY-MM-DD)')
     parser.add_argument(
         '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=500)
+    parser.add_argument(
+        '-s', '--sortby', help="by what to sort the largest chats (count, chars)", default="count")
     args = parser.parse_args()
     MIN_MESSAGE_COUNT = args.minSize
     startDate = None
@@ -254,7 +274,7 @@ def main():
     folderDir = setupDirTree(args.folder)
     chats = get_possible_chats(folderDir)
     largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
-                        startDate=startDate, endDate=endDate)
+                        startDate=startDate, endDate=endDate, sortby=args.sortby)
     # conversationAnalyzer(folderDir, MIN_MESSAGE_COUNT,folderDir)
     timeSeriesAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT,
                        startDate=startDate, endDate=endDate)

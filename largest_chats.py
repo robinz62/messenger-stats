@@ -7,7 +7,8 @@ ENDTIME = datetime.datetime.max.timestamp()*1000
 
 
 def characterCount(messages):
-    charCounter = {}
+    indData = {}
+    totalChars = 0
     for message in messages:
         sender = message["sender_name"]
         defaultHeaders = {"sender_name", "sender_id_INTERNAL", "timestamp_ms",
@@ -15,6 +16,8 @@ def characterCount(messages):
         messageHeaders = set(list(message.keys()))
         remainingHeaders = messageHeaders.difference(defaultHeaders)
         for h in remainingHeaders:
+            if (h == "content"):
+                totalChars += len(message[h])
             if (h == "call_duration"):
                 counter = message[h]
             elif (h == "sticker"):
@@ -26,14 +29,14 @@ def characterCount(messages):
                     counter = 1
                     print(message)
 
-            if (not sender in charCounter):
-                charCounter[sender] = collections.OrderedDict({"messages": 0})
-            if (not h in charCounter[sender]):
-                charCounter[sender][h] = 0
-            charCounter[sender][h] += counter
-        charCounter[sender]["messages"] += 1
+            if (not sender in indData):
+                indData[sender] = collections.OrderedDict({"messages": 0})
+            if (not h in indData[sender]):
+                indData[sender][h] = 0
+            indData[sender][h] += counter
+        indData[sender]["messages"] += 1
 
-    data = charCounter
+    data = indData
     try:
         data_sorted = [{k: v} for k, v in sorted(
             data.items(), key=lambda x: x[1]["messages"], reverse=True)]
@@ -43,7 +46,7 @@ def characterCount(messages):
     for item in data_sorted:
         for key in item:
             sortedDict[key] = item[key]
-    return sortedDict
+    return sortedDict, totalChars
 
 
 def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
@@ -86,16 +89,15 @@ def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
                 title = 'TITLE MISSING'
             else:
                 title = data['title']
-            charCount = characterCount(data['messages'])
+            charCount, totalChars = characterCount(data['messages'])
             conversations.append({
                 'title': title,
                 'count': count,
-                'chars': charCount
+                'chars': totalChars,
+                'indData': charCount
             })
         except IOError:
             print(chat)
             # ignore folders not corresponding to a conversation
             pass
-
-    conversations.sort(key=lambda x: x['count'], reverse=True)
     return conversations, total_msg_count
