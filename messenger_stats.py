@@ -13,7 +13,6 @@ from conversation_time_series import get_time_series
 from largest_chats import largest_chats
 from largest_chats import JSON_NAME
 LARGEST_CHATS_TOP_N = 10    # in largest chats, the number of bars to display
-MIN_MESSAGE_COUNT = 2500      # minimum number of messages to do individual analysis
 TIME_INTERVAL = 14          # number of days for time interval analysis
 MICROSECONDS_PER_DAY = 86400000
 
@@ -30,7 +29,7 @@ def chatToString(chat):
     return s
 
 
-def largestChatAnalyzer(folderDir, startDate=None, endDate=None):
+def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None):
        ##########################
     # largest chats analyzer #
     ##########################
@@ -44,7 +43,8 @@ def largestChatAnalyzer(folderDir, startDate=None, endDate=None):
     with open(os.path.join('output', 'data', 'aggregate', 'top_chats.tsv'), 'w') as f:
         f.write("All messaging data with messages over " + str(MIN_MESSAGE_COUNT) +
                 " messages.\n")
-        f.write("Messages from " + str(startDate) + " until " + str(endDate) + "\n")
+        f.write("Messages from " + str(startDate) +
+                " until " + str(endDate) + "\n")
         f.write("NOTE: 'content' refers to number of characters\n")
         f.write("______________________________________________________________\n")
         for c in all_conversations:
@@ -71,7 +71,7 @@ def largestChatAnalyzer(folderDir, startDate=None, endDate=None):
     return
 
 
-def conversationAnalyzer(chats, folderDir):
+def conversationAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT):
     ######################
     # conversation stats #
     ######################
@@ -153,7 +153,7 @@ def conversationAnalyzer(chats, folderDir):
         plt.close()
 
 
-def timeSeriesAnalyzer(chats, folderDir, startDate=None, endDate=None):
+def timeSeriesAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None):
     ###############
     # time series #
     ###############
@@ -241,8 +241,10 @@ def main():
                         help='earliest message from this date (YYYY-MM-DD)')
     parser.add_argument('-e', '--endDate',
                         help='last message up to this date (YYYY-MM-DD)')
+    parser.add_argument(
+        '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=500)
     args = parser.parse_args()
-
+    MIN_MESSAGE_COUNT = args.minSize
     startDate = None
     if (args.startDate):
         startDate = datetime.strptime(args.startDate, "%Y-%m-%d")
@@ -251,9 +253,11 @@ def main():
         endDate = datetime.strptime(args.endDate, "%Y-%m-%d")
     folderDir = setupDirTree(args.folder)
     chats = get_possible_chats(folderDir)
-    largestChatAnalyzer(folderDir, startDate, endDate)
-    # conversationAnalyzer(folderDir, folderDir)
-    timeSeriesAnalyzer(chats, folderDir, startDate, endDate)
+    largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
+                        startDate=startDate, endDate=endDate)
+    # conversationAnalyzer(folderDir, MIN_MESSAGE_COUNT,folderDir)
+    timeSeriesAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT,
+                       startDate=startDate, endDate=endDate)
 
 
 if __name__ == '__main__':
