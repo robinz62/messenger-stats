@@ -10,7 +10,7 @@ def characterCount(messages):
     charCounter = {}
     for message in messages:
         sender = message["sender_name"]
-        defaultHeaders = {"sender_name", "timestamp_ms",
+        defaultHeaders = {"sender_name", "sender_id_INTERNAL", "timestamp_ms",
                           "type", "missed"}
         messageHeaders = set(list(message.keys()))
         remainingHeaders = messageHeaders.difference(defaultHeaders)
