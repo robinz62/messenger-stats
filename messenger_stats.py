@@ -1,142 +1,13 @@
 
 import argparse
-from datetime import datetime
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import shutil
-import pprint
 
-from conversation_stats import get_possible_chats
-from conversation_stats import conversation_stats
-from conversation_time_series import get_time_series
+from datetime import datetime
+
+from conversation_stats import conversationAnalyzer
+from conversation_time_series import timeSeriesAnalyzer
 from largest_chats import largestChatAnalyzer
-from largest_chats import JSON_NAME
-TIME_INTERVAL = 14          # number of days for time interval analysis
-MICROSECONDS_PER_DAY = 86400000
-
-
-def conversationAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT):
-    ######################
-    # conversation stats #
-    ######################
-
-    print(len(chats))
-
-    for chat in chats:
-        try:
-            react_map, msg_count_map, char_count_map, msg_count = conversation_stats(
-                os.path.join(folderDir, chat, 'message.json'))
-        except:
-            continue
-
-        if msg_count < MIN_MESSAGE_COUNT:
-            continue
-        os.makedirs(os.path.join('output', 'data', 'individual', chat))
-        os.makedirs(os.path.join('output', 'graphs', 'individual', chat))
-        with open(os.path.join('output', 'data', 'individual', chat, 'conversation_stats.tsv'), 'w') as f:
-            f.write('\t'.join([
-                'person',
-                'thumbs_up',
-                'thumbs_down',
-                'laughing',
-                'heart_eyes',
-                'angry',
-                'cry',
-                'wow',
-                'msg_count',
-                'char_count',
-            ]) + '\n')
-            for person in react_map:
-                freeusfromthisworld2
-                thumbs_up = react_map[person].get('Thumbs Up', 0)
-                thumbs_down = react_map[person].get('Thumbs Down', 0)
-                laughing = react_map[person].get('Laughing', 0)
-                heart_eyes = react_map[person].get('Heart Eyes', 0)
-                angry = react_map[person].get('Angry', 0)
-                cry = react_map[person].get('Cry', 0)
-                wow = react_map[person].get('Wow', 0)
-                msg_count = msg_count_map[person]
-                char_count = char_count_map[person]
-                f.write('\t'.join([
-                    person,
-                    str(thumbs_up),
-                    str(thumbs_down),
-                    str(laughing),
-                    str(heart_eyes),
-                    str(angry),
-                    str(cry),
-                    str(wow),
-                    str(msg_count),
-                    str(char_count),
-                ]) + '\n')
-        # make plot
-        x = list(react_map.keys())
-        thumbs_up = []
-        thumbs_down = []
-        laughing = []
-        heart_eyes = []
-        angry = []
-        cry = []
-        wow = []
-        for _, person in enumerate(x):
-            thumbs_up.append(react_map[person].get('Thumbs Up', 0))
-            thumbs_down.append(react_map[person].get('Thumbs Down', 0))
-            laughing.append(react_map[person].get('Laughing', 0))
-            heart_eyes.append(react_map[person].get('Heart Eyes', 0))
-            angry.append(react_map[person].get('Angry', 0))
-            cry.append(react_map[person].get('Cry', 0))
-            wow.append(react_map[person].get('Wow', 0))
-        plt.figure(figsize=(14, 6.5))
-        plt.title('Reacts Received')
-        subcategorybar(x, [thumbs_up, thumbs_down, laughing,
-                           heart_eyes, angry, cry, wow])
-        plt.legend(['Thumbs Up', 'Thumbs Down', 'Laughing',
-                    'Heart Eyes', 'Angry', 'Cry', 'Wow'])
-        plt.savefig(os.path.join('output', 'graphs', 'individual',
-                                 chat, 'react_stats.png'), bbox_inches='tight')
-        plt.close()
-
-
-def timeSeriesAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None):
-    ###############
-    # time series #
-    ###############
-
-    print('time series')
-    for chat in chats:
-        try:
-            times, msg_count = get_time_series(
-                os.path.join(folderDir, chat, JSON_NAME))
-        except:
-            continue
-
-        if msg_count < MIN_MESSAGE_COUNT:
-            continue
-        if not os.path.exists(os.path.join('output', 'graphs', 'individual', chat)):
-            os.makedirs(os.path.join('output', 'graphs', 'individual', chat))
-        # TODO: any interesting data to store?
-
-        # skip the first few 'messenger introduction' messages
-        if len(times) >= 3:
-            times = times[:-2]
-        first_time = times[-1]
-        last_time = times[0]
-        num_months = int((last_time - first_time) /
-                         (TIME_INTERVAL*MICROSECONDS_PER_DAY)) + 1
-        y, bin_edges = np.histogram(times, bins=num_months)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.0
-        timestamps = [datetime.utcfromtimestamp(
-            time / 1000) for time in bin_centers]
-        plt.figure(figsize=(14, 6.5))
-        plt.plot(timestamps, y)
-        plt.title('Messages over Time')
-        plt.xlabel('Date')
-        plt.ylabel('Messages per Interval (every ' +
-                   str(TIME_INTERVAL) + ' days)')
-        plt.savefig(os.path.join('output', 'graphs', 'individual',
-                                 chat, 'conversation_time_series.png'), bbox_inches='tight')
-        plt.close()
 
 
 def setupDirTree(folderDir):
@@ -160,18 +31,25 @@ def setupDirTree(folderDir):
     return folderDir
 
 
-def subcategorybar(X, vals, width=0.8):
+def get_possible_chats(root_dir, filters=[]):
     """
-    Bar graph with multiple bars per categorical variable.
-    From stack overflow.
-    https://stackoverflow.com/questions/48157735/plot-multiple-bars-for-categorical-data
+    Returns a list of the available chat groups. Manually ignores hidden files.
+    filter is a list of strings that must be substrings of a chat folder's name
     """
-    n = len(vals)
-    _X = np.arange(len(X))
-    for i in range(n):
-        plt.bar(_X - width/2.0 + i/float(n)*width,
-                vals[i], width=width/float(n), align="edge")
-    plt.xticks(_X, X)
+    chats = os.listdir(root_dir)
+    filtered = []
+    for chat in chats:
+        if chat.startswith('.') or chat == 'stickers_used':
+            continue
+        include = True
+        for f in filters:
+            if f not in chat:
+                include = False
+                break
+        if include:
+            filtered.append(chat)
+
+    return filtered
 
 
 def main():
@@ -191,6 +69,9 @@ def main():
     parser.add_argument(
         '-s', '--sortby', help="by what to sort the largest chats (messages, characters)", default="messages")
     args = parser.parse_args()
+
+    ###############################################################################################
+
     MIN_MESSAGE_COUNT = args.minSize
     startDate = None
     if (args.startDate):
@@ -198,6 +79,7 @@ def main():
     endDate = None
     if (args.endDate):
         endDate = datetime.strptime(args.endDate, "%Y-%m-%d")
+
     folderDir = setupDirTree(args.folder)
     chats = get_possible_chats(folderDir)
     largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,

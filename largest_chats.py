@@ -1,8 +1,10 @@
 import json
 import os
+
 import collections
 import datetime
 import matplotlib.pyplot as plt
+
 JSON_NAME = 'message_1.json'
 ENDTIME = datetime.datetime.max.timestamp()*1000
 
