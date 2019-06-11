@@ -52,6 +52,12 @@ def main():
         '-s', '--sortby', help="by what to sort the largest chats (messages, characters)", default="messages")
     parser.add_argument(
         '-o', '--output', help="where to save the output data", default="./output")
+    parser.add_argument(
+        '-n', '--topN', help="top N chats displayed per time interval", default=10, type=int)
+    parser.add_argument('-t', '--timeInterval',
+                        help="number of days for each time interval", default=30, type=int)
+    parser.add_argument('-p', '--plotTimeInterval',
+                        help="whether to plot individual plots for time series analysis", action='store_true')
     args = parser.parse_args()
 
     ###############################################################################################
@@ -80,7 +86,8 @@ def main():
     timeAnalysis = True
     if(timeAnalysis):
         timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT,
-                           startDate=startDate, endDate=endDate, outputDir=timeOutDir)
+                           startDate=startDate, endDate=endDate, outputDir=timeOutDir,
+                           TOP_N_PER_INTERVAL=args.topN, TIME_INTERVAL=args.timeInterval, plot=args.plotTimeInterval)
 
 
 if __name__ == '__main__':

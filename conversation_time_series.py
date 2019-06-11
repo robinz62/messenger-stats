@@ -9,8 +9,6 @@ import collections
 
 from largest_chats import JSON_NAME
 from largest_chats import ENDTIME
-TOP_N_PER_INTERVAL = 10
-TIME_INTERVAL = 30  # number of days for time interval analysis
 MICROSECONDS_PER_DAY = 86400000
 
 
@@ -29,7 +27,7 @@ def get_time_series(MESSAGES_FILE):
     return times, len(data['messages']), title
 
 
-def plotTimeSeries(times, chat, outputDir):
+def plotTimeSeries(times, chat, outputDir, TIME_INTERVAL):
     '''
     plots a time series for an individual chat
     assumes times is sorted in ascending order
@@ -73,7 +71,7 @@ def get_possible_chats(root_dir, filters=[]):
     return filtered
 
 
-def getAllTimeSeriesData(folderDir, chats, MIN_MESSAGE_COUNT, plot=True, outputDir="./TimeSeries"):
+def getAllTimeSeriesData(folderDir, chats, MIN_MESSAGE_COUNT, plot=True, outputDir="./TimeSeries", TIME_INTERVAL=30):
     '''
     Returns a dictionary that maps a chat to its time series, along with the earliest
     and latest timestamps
@@ -104,11 +102,12 @@ def getAllTimeSeriesData(folderDir, chats, MIN_MESSAGE_COUNT, plot=True, outputD
         totalTimeDict[title] = times
 
         if (msg_count > MIN_MESSAGE_COUNT and plot):
-            plotTimeSeries(times, chat, outputDir)
+            plotTimeSeries(times, chat, outputDir=outputDir,
+                           TIME_INTERVAL=TIME_INTERVAL)
     return totalTimeDict, earliestTime, latestTime
 
 
-def topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir):
+def topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir, TIME_INTERVAL, TOP_N_PER_INTERVAL):
     keys = range(earliestTime, latestTime,
                  TIME_INTERVAL * MICROSECONDS_PER_DAY)
     mostFrequentChats = {}
@@ -174,12 +173,14 @@ def topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir):
                 f.write(str(freq) + '\n')
 
 
-def timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None, outputDir="./timeSeries"):
+def timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None,
+                       outputDir="./timeSeries", TIME_INTERVAL=30, TOP_N_PER_INTERVAL=10, plot=True):
     ###############
     # time series #
     ###############
     chats = get_possible_chats(folderDir)
     print('time series')
     allTimeSeries, earliestTime, latestTime = getAllTimeSeriesData(
-        folderDir, chats, MIN_MESSAGE_COUNT, plot=False, outputDir=os.path.join(outputDir, "graphs"))
-    topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir)
+        folderDir, chats, MIN_MESSAGE_COUNT, plot=plot, outputDir=os.path.join(outputDir, "graphs"), TIME_INTERVAL=TIME_INTERVAL)
+    topNPerInterval(allTimeSeries, earliestTime, latestTime,
+                    outputDir, TIME_INTERVAL=TIME_INTERVAL, TOP_N_PER_INTERVAL=TOP_N_PER_INTERVAL)
