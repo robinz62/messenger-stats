@@ -10,7 +10,7 @@ from conversation_time_series import timeSeriesAnalyzer
 from largest_chats import largestChatAnalyzer
 
 
-def setupDirTree(folderDir):
+def setupDirTree(folderDir, outputDir="./"):
     if not folderDir:
         if os.path.isdir('messages/inbox'):
             folderDir = 'messages/inbox'
@@ -22,34 +22,16 @@ def setupDirTree(folderDir):
             return
 
     # create output dirs, deleting old if exists
-    if os.path.isdir('output'):
-        shutil.rmtree('output')
-    os.makedirs(os.path.join('output', 'data', 'aggregate'))
-    os.makedirs(os.path.join('output', 'data', 'individual'))
-    os.makedirs(os.path.join('output', 'graphs', 'aggregate'))
-    os.makedirs(os.path.join('output', 'graphs', 'individual'))
-    return folderDir
+    if os.path.isdir(outputDir):
+        shutil.rmtree(outputDir)
 
-
-def get_possible_chats(root_dir, filters=[]):
-    """
-    Returns a list of the available chat groups. Manually ignores hidden files.
-    filter is a list of strings that must be substrings of a chat folder's name
-    """
-    chats = os.listdir(root_dir)
-    filtered = []
-    for chat in chats:
-        if chat.startswith('.') or chat == 'stickers_used':
-            continue
-        include = True
-        for f in filters:
-            if f not in chat:
-                include = False
-                break
-        if include:
-            filtered.append(chat)
-
-    return filtered
+    aggreOutDir = os.path.join(outputDir, 'aggregate')
+    timeOutDir = os.path.join(outputDir, 'timeSeries')
+    timeGraphOutDir = os.path.join(outputDir, 'timeSeries', 'graphs')
+    os.makedirs(aggreOutDir)
+    os.makedirs(timeOutDir)
+    os.makedirs(timeGraphOutDir)
+    return folderDir, aggreOutDir, timeOutDir
 
 
 def main():
@@ -68,6 +50,8 @@ def main():
         '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=500)
     parser.add_argument(
         '-s', '--sortby', help="by what to sort the largest chats (messages, characters)", default="messages")
+    parser.add_argument(
+        '-o', '--output', help="where to save the output data", default="./output")
     args = parser.parse_args()
 
     ###############################################################################################
@@ -80,13 +64,23 @@ def main():
     if (args.endDate):
         endDate = datetime.strptime(args.endDate, "%Y-%m-%d")
 
-    folderDir = setupDirTree(args.folder)
-    chats = get_possible_chats(folderDir)
-    largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
-                        startDate=startDate, endDate=endDate, sortby=args.sortby)
-    # conversationAnalyzer(folderDir, MIN_MESSAGE_COUNT,folderDir)
-    timeSeriesAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT,
-                       startDate=startDate, endDate=endDate)
+    folderDir, aggreOutDir, timeOutDir = setupDirTree(
+        args.folder, outputDir=args.output)
+
+    basicAnalysis = False
+    if(basicAnalysis):
+        largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
+                            startDate=startDate, endDate=endDate, sortby=args.sortby, outputDir=aggreOutDir)
+
+    karmaAnalysis = False
+    if(karmaAnalysis):
+        # conversationAnalyzer(folderDir, MIN_MESSAGE_COUNT,folderDir)
+        pass
+
+    timeAnalysis = True
+    if(timeAnalysis):
+        timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT,
+                           startDate=startDate, endDate=endDate, outputDir=timeOutDir)
 
 
 if __name__ == '__main__':
