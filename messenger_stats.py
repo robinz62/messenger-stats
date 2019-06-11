@@ -49,7 +49,7 @@ def main():
     parser.add_argument(
         '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=500)
     parser.add_argument(
-        '-s', '--sortby', help="by what to sort the largest chats (messages, characters)", default="messages")
+        '-s', '--sortby', help="by what to sort the largest chats (messages, characters, both)", default="messages")
     parser.add_argument(
         '-o', '--output', help="where to save the output data", default="./output")
     parser.add_argument(
@@ -73,7 +73,7 @@ def main():
     folderDir, aggreOutDir, timeOutDir = setupDirTree(
         args.folder, outputDir=args.output)
 
-    basicAnalysis = False
+    basicAnalysis = True
     if(basicAnalysis):
         largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
                             startDate=startDate, endDate=endDate, sortby=args.sortby, outputDir=aggreOutDir)

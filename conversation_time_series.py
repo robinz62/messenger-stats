@@ -107,6 +107,45 @@ def getAllTimeSeriesData(folderDir, chats, MIN_MESSAGE_COUNT, plot=True, outputD
     return totalTimeDict, earliestTime, latestTime
 
 
+def saveTopN(mostFrequentChats, TOP_N_PER_INTERVAL, TIME_INTERVAL, outputDir):
+    keys = mostFrequentChats.keys()
+    timeBins = []
+    totalMessages = []
+    with open(os.path.join(outputDir, "topNtimeSeries.tsv"), "w+") as f:
+        f.write("Printing the top " + str(TOP_N_PER_INTERVAL) +
+                " chats by number of messages for intervals of every " + str(TIME_INTERVAL) + " days")
+        keys = sorted(keys)
+        for x in range(len(keys)):
+            f.write('\n**********************************\n')
+            f.write("timeStamp: " + str(keys[x]) + "\n")
+            lower = datetime.utcfromtimestamp(keys[x] / 1000)
+            lowerS = str(lower)
+            try:
+                upper = str(datetime.utcfromtimestamp(keys[x+1]/1000))
+            except IndexError:
+                upper = "End"
+            f.write("between " + lowerS + " and " + upper + '\n')
+            mostFrequentChats[keys[x]] = sorted(
+                mostFrequentChats[keys[x]].items(), key=lambda z: z[1], reverse=True)
+
+            frequented = mostFrequentChats[keys[x]][:TOP_N_PER_INTERVAL + 1]
+            for freq in frequented:
+                f.write(str(freq) + '\n')
+
+            timeBins.append(lower)
+            totalMessages.append(frequented[0][1])
+
+    plt.figure(figsize=(14, 6.5))
+    plt.plot(timeBins, totalMessages)
+    plt.title('Total messages over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Messages per Interval (every ' +
+               str(TIME_INTERVAL) + ' days)')
+    plt.savefig(os.path.join(outputDir, 'allMessages.png'),
+                bbox_inches='tight')
+    plt.close()
+
+
 def topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir, TIME_INTERVAL, TOP_N_PER_INTERVAL):
     keys = range(earliestTime, latestTime,
                  TIME_INTERVAL * MICROSECONDS_PER_DAY)
@@ -151,26 +190,8 @@ def topNPerInterval(allTimeSeries, earliestTime, latestTime, outputDir, TIME_INT
             else:
                 mostFrequentChats[stamp][title] = 1
         '''
-
-    with open(os.path.join(outputDir, "topNtimeSeries.tsv"), "w+") as f:
-        f.write("Printing the top " + str(TOP_N_PER_INTERVAL) +
-                " chats by number of messages for intervals of every " + str(TIME_INTERVAL) + " days")
-        keys = sorted(keys)
-        for x in range(len(keys)):
-            f.write('\n**********************************\n')
-            f.write("timeStamp: " + str(keys[x]) + "\n")
-            lower = str(datetime.utcfromtimestamp(keys[x] / 1000))
-            try:
-                upper = str(datetime.utcfromtimestamp(keys[x+1]/1000))
-            except IndexError:
-                upper = "End"
-            f.write("between " + lower + " and " + upper + '\n')
-            mostFrequentChats[keys[x]] = sorted(
-                mostFrequentChats[keys[x]].items(), key=lambda z: z[1], reverse=True)
-
-            frequented = mostFrequentChats[keys[x]][:TOP_N_PER_INTERVAL + 1]
-            for freq in frequented:
-                f.write(str(freq) + '\n')
+    saveTopN(mostFrequentChats=mostFrequentChats, TOP_N_PER_INTERVAL=TOP_N_PER_INTERVAL,
+             TIME_INTERVAL=TIME_INTERVAL, outputDir=outputDir)
 
 
 def timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=None,

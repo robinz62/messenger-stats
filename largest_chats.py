@@ -22,8 +22,8 @@ def chatToString(chat):
     return s
 
 
-def writeDatafile(all_conversations, MIN_MESSAGE_COUNT, startDate, endDate, outputDir="./"):
-    with open(os.path.join(outputDir, 'top_chats.tsv'), 'w') as f:
+def writeDatafile(all_conversations, MIN_MESSAGE_COUNT, startDate, endDate, outputDir="./", sortby="messages"):
+    with open(os.path.join(outputDir, sortby + '_top_chats.tsv'), 'w') as f:
         f.write("All messaging data with messages over " + str(MIN_MESSAGE_COUNT) +
                 " messages.\n")
         f.write("Messages from " + str(startDate) +
@@ -44,7 +44,7 @@ def plotMessages(all_conversations, startDate, endDate, sortby = "messages", LAR
               str(startDate) + ' until ' + str(endDate))
     plt.xlabel("Chat name")
     plt.ylabel("Number of " + sortby + " in chat messages")
-    plt.savefig(os.path.join(outputDir, 'top_chats.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(outputDir, sortby + '_top_chats.png'), bbox_inches='tight')
 
     plt.close()
 
@@ -56,7 +56,7 @@ def plotHistogram(all_conversations, sortby="messages", outputDir="./"):
     plt.title('Conversation Size Histogram')
     plt.xlabel('Conversation Size (number of ' + sortby + ')')
     plt.ylabel('Number of Conversations')
-    plt.savefig(os.path.join(outputDir, 'conversation_sizes.png'),
+    plt.savefig(os.path.join(outputDir, sortby + '_conversation_sizes.png'),
                 bbox_inches='tight')
     plt.close()
 
@@ -172,11 +172,23 @@ def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=No
     all_conversations, total_msg_count = largest_chats(
         folderDir, startDate=startDate, endDate=endDate, minMessages=MIN_MESSAGE_COUNT)
 
-    all_conversations.sort(key=lambda x: x[sortby], reverse=True)
-    writeDatafile(all_conversations, MIN_MESSAGE_COUNT,
-                  startDate, endDate, outputDir=outputDir)
-    plotMessages(all_conversations, startDate, endDate,
-                 sortby=sortby, outputDir=outputDir)
-    plotHistogram(all_conversations, sortby=sortby, outputDir=outputDir)
+
+    
+    if (sortby == "both"):
+        sortbys = ["characters", "messages"]
+        for sortby in sortbys:
+            all_conversations.sort(key=lambda x: x[sortby], reverse=True)
+            writeDatafile(all_conversations, MIN_MESSAGE_COUNT,
+                        startDate, endDate, outputDir=outputDir, sortby=sortby)
+            plotMessages(all_conversations, startDate, endDate,
+                        sortby=sortby, outputDir=outputDir)
+            plotHistogram(all_conversations, sortby=sortby, outputDir=outputDir)    
+    else:
+        all_conversations.sort(key=lambda x: x[sortby], reverse=True)
+        writeDatafile(all_conversations, MIN_MESSAGE_COUNT,
+                    startDate, endDate, outputDir=outputDir)
+        plotMessages(all_conversations, startDate, endDate,
+                    sortby=sortby, outputDir=outputDir)
+        plotHistogram(all_conversations, sortby=sortby, outputDir=outputDir)
     print('done aggregate')
     return
