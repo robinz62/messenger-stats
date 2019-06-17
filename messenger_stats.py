@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 
 from conversation_stats import conversationAnalyzer
-from conversation_time_series import timeSeriesAnalyzer
+from time_series import analyze_time_series
 from largest_chats import largestChatAnalyzer
 
 
@@ -73,7 +73,7 @@ def main():
     folderDir, aggreOutDir, timeOutDir = setupDirTree(
         args.folder, outputDir=args.output)
 
-    basicAnalysis = True
+    basicAnalysis = False
     if(basicAnalysis):
         largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
                             startDate=startDate, endDate=endDate, sortby=args.sortby, outputDir=aggreOutDir)
@@ -84,10 +84,10 @@ def main():
         pass
 
     timeAnalysis = True
-    if(timeAnalysis):
-        timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT,
-                           startDate=startDate, endDate=endDate, outputDir=timeOutDir,
-                           TOP_N_PER_INTERVAL=args.topN, TIME_INTERVAL=args.timeInterval, plot=args.plotTimeInterval)
+    if timeAnalysis:
+        analyze_time_series(folderDir, MIN_MESSAGE_COUNT,
+                           startDate, endDate, timeOutDir,
+                           args.topN, args.timeInterval)
 
 
 if __name__ == '__main__':

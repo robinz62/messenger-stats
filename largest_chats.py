@@ -5,9 +5,6 @@ import collections
 import datetime
 import matplotlib.pyplot as plt
 
-JSON_NAME = 'message_1.json'
-ENDTIME = datetime.datetime.max.timestamp()*1000
-
 
 def chatToString(chat):
     s = chat['title'] + '\n'
@@ -118,7 +115,7 @@ def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
     conversations = []
     for chat in folders:
         try:
-            with open(os.path.join(root_dir, chat, JSON_NAME)) as f:
+            with open(os.path.join(root_dir, chat, utils.JSON_NAME)) as f:
                 data = json.load(f)
             data_temp = []
             if (startDate is None and endDate is None):
@@ -129,7 +126,7 @@ def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
                 else:
                     startTime = startDate.timestamp()*1000
                 if (endDate is None):
-                    endTime = ENDTIME
+                    endTime = utils.ENDTIME
                 else:
                     endTime = endDate.timestamp()*1000
                 for message in data['messages']:
