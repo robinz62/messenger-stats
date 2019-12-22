@@ -1,3 +1,5 @@
+# TODO: everything below this line must still be refactored
+
 import json
 import os
 
@@ -7,8 +9,6 @@ import utils
 This file contains functions that compute statistics with respect to a
 particular converstaion.
 """
-
-
 def conversation_stats(messages_file):
     """
     Returns statistics related to reacts; 3 maps as well as the total message count.
@@ -63,14 +63,3 @@ def conversation_stats(messages_file):
     return react_map, msg_count_map, char_count_map, msg_count
 
 
-def time_series(message_file):
-    """
-    Returns a list of all messages' timestamps in ascending order.
-    messages_file: the message json file
-    """
-    with open(message_file) as f:
-        data = json.load(f)
-
-    times = [message['timestamp_ms'] for message in data['messages']]
-    times.sort()
-    return times
