@@ -26,10 +26,15 @@ Example usage: `python3 messenger_stats.py`.
 * Documentation on additional argument can be found by running the program
   appended with `-h`.
 
+## Bugs / Errors
+
+I only test this program by running it myself on my computer (Mac OS). If you
+discover any bugs or problems, feel free to let me know or open an issue.
+
 ## Ideas
 
 * Participant activity pie chart / to vs from count
-* Reacts given
+* Progress bar for analysis/plot generation
 
 * overlay different time graphs
 * view char counts

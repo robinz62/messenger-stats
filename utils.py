@@ -1,10 +1,13 @@
 from datetime import datetime
+import numpy as np
 import os
+import shutil
 
 import messenger_stats as main
 
 ENDTIME = datetime.max.timestamp() * 1000  # arbitrarily the large time (in ms)
-MICROSECONDS_PER_DAY = 86400000
+MILLISECONDS_PER_DAY = 86400000
+
 
 # TODO: expose this filtering capability to user
 def get_conversations(root_dir, filters=[]):
@@ -14,8 +17,8 @@ def get_conversations(root_dir, filters=[]):
     Args:
         root_dir (str): the path name to the folder containing the conversation
             folders (e.g. messages/inbox).
-        filters (list of str): a list of strings that all must be substrings
-            of a conversation folder's name.
+        filters (list of str, optional): a list of strings that all must be
+            substrings of a conversation folder's name.
     
     Returns:
         the filtered list of conversation folder names.
@@ -34,8 +37,6 @@ def get_conversations(root_dir, filters=[]):
             filtered.append(conv)
     return filtered
 
-
-# TODO: below has not been altered
 
 def unicode_to_react(c):
     """Returns a string description of select unicode emoji characters.
@@ -61,3 +62,35 @@ def unicode_to_react(c):
     if c == u'\xf0\x9f\x98\xae':
         return 'Wow'
     return 'OTHER'
+
+
+def subcategorybar(plt, X, vals, width=0.8):
+    """Creates a bar graph with multiple bars per categorical variable.
+    Inspired from
+    https://stackoverflow.com/questions/48157735/plot-multiple-bars-for-categorical-data
+
+    Args:
+        plt (matplotlib.pyplot): a handle to the plotting object.
+        X (list of str): the list of categories which contain subcategories.
+        vals (list of list of num): the values to plot. The outer list
+            corresponds to the subcategory values and the inner list
+            corresponds to the value each category takes for the subcategory.
+        width (num, optional): used to scale the plot appearance
+    """
+    n = len(vals)
+    _X = np.arange(len(X))
+    for i in range(n):
+        plt.bar(_X - width/2.0 + i/float(n)*width, vals[i], width=width/float(n), align='edge')   
+    plt.xticks(_X, X)
+
+
+def prepare_output_directory(path):
+    """Creates a directory at path, deleting the existing directory at the path
+    if it exists.
+
+    Args:
+        path (str): the path to the target directory.
+    """
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    os.makedirs(path)

@@ -8,22 +8,22 @@ import utils
 N = 10  # the number of top conversations to record
 
 def run(messages_folder):
-    os.makedirs(os.path.join('output', 'largest_chats_all_time'))
+    utils.prepare_output_directory(os.path.join('output', 'largest_chats_all_time'))
 
     # Parse data
     conversations = []
     for conv in utils.get_conversations(messages_folder):
-        message_count = 1
-        conversation = {'title': '', 'count': 0}
+        message_id = 1
+        conversation = {'title': conv, 'count': 0}
         while True:
             try:
-                file_name = main.MESSAGE_FILE.format(message_count)
+                file_name = main.MESSAGE_FILE.format(message_id)
                 with open(os.path.join(messages_folder, conv, file_name)) as f:
                     data = json.load(f)
                 conversation['count'] += len(data['messages'])
                 if 'title' in data:
                     conversation['title'] = data['title']
-                message_count += 1
+                message_id += 1
             except FileNotFoundError:
                 break
         conversations.append(conversation)

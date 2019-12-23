@@ -6,20 +6,20 @@ import messenger_stats as main
 import utils
 
 def run(messages_folder):
-    os.makedirs(os.path.join('output', 'conversation_sizes_histogram'))
+    utils.prepare_output_directory(os.path.join('output', 'conversation_sizes_histogram'))
 
     # Parse data
     counts = []
     for conv in utils.get_conversations(messages_folder):
-        message_count = 1
+        message_id = 1
         count = 0
         while True:
             try:
-                file_name = main.MESSAGE_FILE.format(message_count)
+                file_name = main.MESSAGE_FILE.format(message_id)
                 with open(os.path.join(messages_folder, conv, file_name)) as f:
                     data = json.load(f)
                 count += len(data['messages'])
-                message_count += 1
+                message_id += 1
             except FileNotFoundError:
                 break
         counts.append(count)

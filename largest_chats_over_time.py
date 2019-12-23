@@ -1,8 +1,8 @@
+from datetime import datetime
 import bisect
 import json
 import matplotlib.pyplot as plt
 import os
-from datetime import datetime
 
 import messenger_stats as main
 import utils
@@ -11,7 +11,7 @@ N = 5  # the number of top conversations to record per time interval
 TIME_INTERVAL = 30  # the number of days per time interval to analyze
 
 def run(messages_folder, time_interval=TIME_INTERVAL):
-    os.makedirs(os.path.join('output', 'largest_chats_over_time'))
+    utils.prepare_output_directory(os.path.join('output', 'largest_chats_over_time'))
 
     # Parse data
     conversation_to_timestamps = {}
@@ -19,16 +19,16 @@ def run(messages_folder, time_interval=TIME_INTERVAL):
     time_begin = None  # the globally smallest timestamp
     time_end = None  # the globally largest timestamp
     for conv in utils.get_conversations(messages_folder):
-        message_count = 1
+        message_id = 1
         timestamps = []
         while True:
             try:
-                file_name = main.MESSAGE_FILE.format(message_count)
+                file_name = main.MESSAGE_FILE.format(message_id)
                 with open(os.path.join(messages_folder, conv, file_name)) as f:
                     data = json.load(f)
                 timestamps.extend([message['timestamp_ms'] for message in data['messages']])
                 conversation_to_title[conv] = data['title'] if 'title' in data else conv
-                message_count += 1
+                message_id += 1
             except FileNotFoundError:
                 break
         timestamps.sort()
@@ -37,7 +37,7 @@ def run(messages_folder, time_interval=TIME_INTERVAL):
         conversation_to_timestamps[conv] = timestamps
     
     conversations_over_time = {}  # interval start -> { conversation -> message count }
-    interval_starts = range(time_begin, time_end, time_interval * utils.MICROSECONDS_PER_DAY)
+    interval_starts = range(time_begin, time_end, time_interval * utils.MILLISECONDS_PER_DAY)
     for center in interval_starts:
         conversations_over_time[center] = {}
 
