@@ -33,9 +33,6 @@ discover any bugs or problems, feel free to let me know or open an issue.
 
 ## Ideas
 
-* Participant activity pie chart / to vs from count
 * Progress bar for analysis/plot generation
 
 * overlay different time graphs
-* view char counts
-* user interface / web app lol
