@@ -9,18 +9,26 @@ import mplcursors
 import bisect
 import collections
 
-from largest_chats import JSON_EXT
+from largest_chats import get_json_files
+from largest_chats import characterCount
 from largest_chats import ENDTIME
 MICROSECONDS_PER_DAY = 86400000
 ENDTIME = datetime.max.timestamp()*1000
 
 
-def get_time_series(MESSAGES_FILE, sender_name, startDate=None, endDate=None):
+def get_time_series(folder_path, sender_name, startDate=None, endDate=None):
     """
     Returns list of timestamps as well as total number of messages and the title of the chat.
     """
-    with open(MESSAGES_FILE) as f:
-        data = json.load(f)
+    data = {}
+    json_files = get_json_files(folder_path)
+    for j in json_files:
+        with open(os.path.join(folder_path, j)) as f:
+            data_temp = json.load(f)
+        if(len(data) == 0 ):
+            data = data_temp 
+        else:
+            data['messages'].extend(data_temp['messages'])
 
     times = sorted([message['timestamp_ms'] for message in data['messages']])
     send_times = sorted([message['timestamp_ms'] for message in data['messages']
@@ -47,6 +55,7 @@ def get_time_series(MESSAGES_FILE, sender_name, startDate=None, endDate=None):
             endTime = endDate.timestamp() * 1000
         times = [x for x in times if x > startTime and x < endTime]
         send_times = [x for x in send_times if x > startTime and x < endTime]
+      
         receive_times = [x for x in receive_times if x >
                          startTime and x < endTime]
     return times, title, send_times, receive_times
@@ -87,14 +96,15 @@ def slider_test():
 
 
 def plotOverlayingTimeSeries(totalTimeDict, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_PERIOD, title):
-    fig, ax = plt.subplots(figsize=(40, 10))
+    fig, ax = plt.subplots(figsize=(14, 6.5))
     ax.set_title(title + ' Messages over Time (min_msg_over_time > ' +
                  str(MIN_MESSAGE_COUNT) + ' or min_msg_in_interval > ' +
                  str(MIN_MESSAGE_PERIOD) + ')')
     ax.set_xlabel('Date')
     ax.set_ylabel('Messages per Interval (every ' +
                   str(TIME_INTERVAL) + ' days)')
-    for chat in totalTimeDict:
+    sorted_chats = sorted(totalTimeDict, key=lambda chat: len(totalTimeDict[chat]), reverse=True)
+    for chat in sorted_chats:
         times = totalTimeDict[chat]
         if (len(times) < 1):
             continue
@@ -214,8 +224,10 @@ def getAllTimeSeriesData(folderDir, chats, sender_name, outputDir="./TimeSeries"
     earliestTime = ENDTIME
     latestTime = 0
     for chat in chats:
+        folder_path = os.path.join(folderDir, chat)
+        
         times, title, send_times, receive_times = get_time_series(
-            os.path.join(folderDir, chat, JSON_NAME), sender_name, startDate=startDate, endDate=endDate)
+            folder_path, sender_name, startDate=startDate, endDate=endDate)
         if (len(times) < 1):
             continue
         if (title is None or len(title) < 1):
@@ -244,8 +256,10 @@ def getAllTimeSeriesData(folderDir, chats, sender_name, outputDir="./TimeSeries"
 
 
 def plotAllTimeSeries(totalTimeDict, sendSeries, receiveSeries, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL):
+    sorted_chats = sorted(totalTimeDict, key=lambda chat: len(totalTimeDict[chat]), reverse=True)
+ 
+    for chat in sorted_chats:
 
-    for chat in totalTimeDict:
         times = totalTimeDict[chat]
         msg_count = len(times)
         send_times = sendSeries[chat]

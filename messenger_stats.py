@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 
 from conversation_stats import conversationAnalyzer
-from time_series import analyze_time_series
+from conversation_time_series import timeSeriesAnalyzer
 from largest_chats import largestChatAnalyzer
 
 
@@ -56,7 +56,7 @@ def main():
                         help="number of days for each time interval", default=30, type=int)
     parser.add_argument('-p', '--plotTimeInterval',
                         help="whether to plot individual plots for time series analysis", action='store_true')
-    parser.add_argument('--sender_name', help="name of the account owner")
+    parser.add_argument('-a', '--sender_name', help="name of the account owner as it appears on Facebook", required=True)
     args = parser.parse_args()
 
     ###############################################################################################
@@ -84,7 +84,7 @@ def main():
         pass
 
     print('doing time analysis')
-    timeAnalysis = False
+    timeAnalysis = True
     if (timeAnalysis):
         print(startDate, endDate)
         sender_name = args.sender_name
