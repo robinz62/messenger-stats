@@ -118,7 +118,7 @@ def plotOverlayingTimeSeries(totalTimeDict, outputDir, TIME_INTERVAL, MIN_MESSAG
         if (max(y) < MIN_MESSAGE_PERIOD and len(times) < MIN_MESSAGE_COUNT):
             # print('skipped: ' + chat + ' (max freq is ' + str(max(y)) + ')')
             continue
-        ax.plot(timestamps, y, label=chat)
+        ax.plot(timestamps, y, label=chat[:20])
     # Use a Cursor to interactively display the label for a selected line.
     mplcursors.cursor().connect(
         "add", lambda sel: sel.annotation.set_text(sel.artist.get_label()))
