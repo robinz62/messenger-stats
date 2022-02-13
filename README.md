@@ -9,10 +9,15 @@ This README is based on the data format as of 2022 Feb.
 
 ## Downloading Facebook Messenger Data
 
-Navigate to your Facebook Settings (top right menu) then select Your Facebook
-Information in the left navbar. Click Download Your Information. You can
-download other data, but only Messages is relevant for these scripts. Be sure
-to download the files as JSON. Use low quality to speed up download time. Depending on how much you use Messenger, it could take up to a day for Facebook to consolidated all of your data.
+* Navigate to your Facebook Settings (top right menu) 
+* Select Your Facebook Information in the left navbar. 
+* Click `Show` on Download Your Information. 
+* Select `JSON` for file format, and `low` for file quality (only affects photos)
+* Choose the time period you want Facebook to retrieve your data from. 
+* In Select Information to Download, click `Deselect All`, then select `Messages`. You can download other data, but only Messages is relevant for these scripts. 
+* Request to download at the bottom. Depending on how much you use Messenger, it could take up to a day for Facebook to consolidated all of your data. 
+* Once the data is ready, you will receive an email. Navigate back to the `Download Your Data` section.
+* Go to `Available Files` on the top bar, and click `Download`. If you have multiple files, download the larger one. Or, download all the files and combine the folders (working on instructions for this).
 
 ## Scripts
 
