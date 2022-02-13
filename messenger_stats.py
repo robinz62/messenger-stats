@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 
 from conversation_stats import conversationAnalyzer
-from conversation_time_series import timeSeriesAnalyzer
+from time_series import analyze_time_series
 from largest_chats import largestChatAnalyzer
 
 
