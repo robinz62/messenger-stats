@@ -15,16 +15,14 @@ def setupDirTree(folderDir, outputDir="./"):
         if os.path.isdir('messages/inbox'):
             folderDir = 'messages/inbox'
         else:
-            print((
+            raise IOError((
                 'Error: must specify path to messages directory or have '
                 'the messages/inbox directory in current directory'
             ))
-            return
 
     # create output dirs, deleting old if exists
     if os.path.isdir(outputDir):
         shutil.rmtree(outputDir)
-
     aggreOutDir = os.path.join(outputDir, 'aggregate')
     timeOutDir = os.path.join(outputDir, 'timeSeries')
     timeGraphOutDir = os.path.join(outputDir, 'timeSeries', 'graphs')
@@ -47,7 +45,7 @@ def main():
     parser.add_argument('-e', '--endDate',
                         help='last message up to this date (YYYY-MM-DD)')
     parser.add_argument(
-        '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=500)
+        '-m', '--minSize', help="size of smallest chat you wish to include", type=int, default=10000)
     parser.add_argument(
         '-s', '--sortby', help="by what to sort the largest chats (messages, characters, both)", default="messages")
     parser.add_argument(
@@ -58,6 +56,7 @@ def main():
                         help="number of days for each time interval", default=30, type=int)
     parser.add_argument('-p', '--plotTimeInterval',
                         help="whether to plot individual plots for time series analysis", action='store_true')
+    parser.add_argument('--sender_name', help="name of the account owner")
     args = parser.parse_args()
 
     ###############################################################################################
@@ -74,18 +73,22 @@ def main():
         args.folder, outputDir=args.output)
 
     basicAnalysis = True
+    print('doing basic analysis')
     if(basicAnalysis):
         largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
-                            startDate=startDate, endDate=endDate, sortby=args.sortby, outputDir=aggreOutDir)
+                            startDate=startDate, endDate=endDate, sortby=args.sortby, outputDir=aggreOutDir, topn=args.topN)
 
     karmaAnalysis = False
     if(karmaAnalysis):
         # conversationAnalyzer(folderDir, MIN_MESSAGE_COUNT,folderDir)
         pass
 
-    timeAnalysis = True
-    if(timeAnalysis):
-        timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT,
+    print('doing time analysis')
+    timeAnalysis = False
+    if (timeAnalysis):
+        print(startDate, endDate)
+        sender_name = args.sender_name
+        timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, sender_name,
                            startDate=startDate, endDate=endDate, outputDir=timeOutDir,
                            TOP_N_PER_INTERVAL=args.topN, TIME_INTERVAL=args.timeInterval, plot=args.plotTimeInterval)
 

@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from largest_chats import JSON_NAME
+from largest_chats import JSON_EXT
 
 
 def unicode_to_react(str):
@@ -52,7 +52,7 @@ def conversationAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT):
     for chat in chats:
         try:
             react_map, msg_count_map, char_count_map, msg_count = conversation_stats(
-                os.path.join(folderDir, chat, JSON_NAME))
+                os.path.join(folderDir, chat, JSON_EXT))
         except:
             continue
 
@@ -74,7 +74,6 @@ def conversationAnalyzer(chats, folderDir, MIN_MESSAGE_COUNT):
                 'char_count',
             ]) + '\n')
             for person in react_map:
-                freeusfromthisworld2
                 thumbs_up = react_map[person].get('Thumbs Up', 0)
                 thumbs_down = react_map[person].get('Thumbs Down', 0)
                 laughing = react_map[person].get('Laughing', 0)
