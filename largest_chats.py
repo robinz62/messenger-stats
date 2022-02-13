@@ -51,10 +51,10 @@ def plotMessages(all_conversations, startDate, endDate, sortby="messages", LARGE
               str(startDate) + ' until ' + str(endDate))
     plt.xlabel("Chat name")
     plt.ylabel("Number of " + sortby + " in chat messages")
-    plt.show()
+    
     plt.savefig(os.path.join(outputDir, sortby +
                              '_top_chats.png'), bbox_inches='tight')
-
+    plt.show()
     plt.close()
 
 
@@ -69,6 +69,8 @@ def plotHistogram(all_conversations, sortby="messages", outputDir="./"):
                 bbox_inches='tight')
     plt.close()
 
+def get_message_content_size(message, defaultHeaders):
+    pass
 
 def characterCount(messages):
     indData = {}
@@ -203,6 +205,7 @@ def largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT, startDate=None, endDate=No
                           outputDir=outputDir)
     else:
         all_conversations.sort(key=lambda x: x[sortby], reverse=True)
+     
         writeDatafile(all_conversations, MIN_MESSAGE_COUNT,
                       startDate, endDate, outputDir=outputDir)
         plotMessages(all_conversations, startDate, endDate,
