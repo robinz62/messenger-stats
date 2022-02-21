@@ -23,18 +23,27 @@ def get_time_series(folder_path, sender_name, startDate=None, endDate=None):
     data = {}
     json_files = get_json_files(folder_path)
     for j in json_files:
+        
         with open(os.path.join(folder_path, j)) as f:
             data_temp = json.load(f)
         if(len(data) == 0 ):
             data = data_temp 
         else:
             data['messages'].extend(data_temp['messages'])
-
+    
     times = sorted([message['timestamp_ms'] for message in data['messages']])
     send_times = sorted([message['timestamp_ms'] for message in data['messages']
                          if message['sender_name'] == sender_name])
     receive_times = sorted([message['timestamp_ms'] for message in data['messages']
                             if not message['sender_name'] == sender_name])
+    
+    sender_times = {}
+    participants = [x['name'] for x in data['participants']]
+    if(sender_name not in participants):
+        return 
+    for p in participants:
+        sender_times[p] = sorted([message['timestamp_ms'] for message in data['messages']
+                            if message['sender_name'] == p]) 
     if 'title' not in data:
         title = None
     else:
@@ -58,7 +67,10 @@ def get_time_series(folder_path, sender_name, startDate=None, endDate=None):
       
         receive_times = [x for x in receive_times if x >
                          startTime and x < endTime]
-    return times, title, send_times, receive_times
+        for p in participants:
+            sender_times[p] = [x for x in sender_times[p] if x >
+                         startTime and x < endTime]
+    return times, title, send_times, receive_times, sender_times
 
 
 def slider_test():
@@ -128,7 +140,8 @@ def plotOverlayingTimeSeries(totalTimeDict, outputDir, TIME_INTERVAL, MIN_MESSAG
 
     plt.savefig(os.path.join(outputDir, title + '.png'), bbox_inches='tight')
     plt.show()
-    plt.close()
+    print('done showing')
+    #plt.close()
     return
 
 
@@ -140,7 +153,7 @@ def get_timestamps(times, num_months):
     return y, timestamps
 
 
-def plotTimeSeries(times, send_times, receive_times, chat, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL):
+def plotTimeSeries(times, sender_times, chat, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL):
     '''
     plots a time series for an individual chat
     assumes times is sorted in ascending order
@@ -157,30 +170,34 @@ def plotTimeSeries(times, send_times, receive_times, chat, outputDir, TIME_INTER
         first_time -= 5 * TIME_INTERVAL * MICROSECONDS_PER_DAY
         last_time += 5*TIME_INTERVAL*MICROSECONDS_PER_DAY
         times.extend([first_time, last_time])
-        receive_times.extend([first_time, last_time])
-        send_times.extend([first_time, last_time])
+        for p in sender_times:
+            sender_times[p].extend([first_time, last_time])
         num_months = int((last_time - first_time) /
                          (TIME_INTERVAL*MICROSECONDS_PER_DAY)) + 1
 
     else:
-        send_times.extend([first_time, last_time])
-        receive_times.extend([first_time, last_time])
+        for p in sender_times:
+            sender_times[p].extend([first_time, last_time])
 
     y, timestamps = get_timestamps(times, num_months)
-    y1, timestamps1 = get_timestamps(send_times, num_months)
-    y2, timestamps2 = get_timestamps(receive_times, num_months)
-    if not((len(times) > MIN_MESSAGE_COUNT or
-            len(send_times) > (MIN_MESSAGE_COUNT / 2) or
-            len(receive_times) > (MIN_MESSAGE_COUNT/2) or
-            max(y) > MIN_MESSAGE_INTERVAL or
-            max(y1) > MIN_MESSAGE_INTERVAL/2 or
-            max(y2) > MIN_MESSAGE_INTERVAL / 2)):
+    ys = {}
+    timestamp_list = {}
+    sorted_senders =sorted(sender_times, key=lambda sender: len(sender_times[sender]), reverse=True)
+    for p in sender_times:
+        y1, timestamps1 = get_timestamps(sender_times[p], num_months)
+        ys[p]=(y1)
+        timestamp_list[p]=(timestamps1)
+    if not(len(times) > MIN_MESSAGE_COUNT or
+            max(y) > MIN_MESSAGE_INTERVAL):
         return
 
     plt.figure(figsize=(14, 6.5))
     plt.plot(timestamps, y, label='all messages')
-    plt.plot(timestamps1, y1, label='sent messages')
-    plt.plot(timestamps2, y2, label='received messages')
+
+    
+    for p in sorted_senders:
+        plt.plot(timestamp_list[p], ys[p], label=p)
+
     plt.title('Messages over Time with ' + chat)
     plt.xlabel('Date')
     plt.ylabel('Messages per Interval (every ' +
@@ -221,13 +238,18 @@ def getAllTimeSeriesData(folderDir, chats, sender_name, outputDir="./TimeSeries"
     totalTimeDict = {}
     sendDict = {}
     receiveDict = {}
+    senderDict = {}
     earliestTime = ENDTIME
     latestTime = 0
     for chat in chats:
         folder_path = os.path.join(folderDir, chat)
         
-        times, title, send_times, receive_times = get_time_series(
+        times_tuple = get_time_series(
             folder_path, sender_name, startDate=startDate, endDate=endDate)
+        
+        if(times_tuple is None):
+            continue 
+        times, title, send_times, receive_times, sender_times = times_tuple
         if (len(times) < 1):
             continue
         if (title is None or len(title) < 1):
@@ -244,31 +266,30 @@ def getAllTimeSeriesData(folderDir, chats, sender_name, outputDir="./TimeSeries"
         '''
 
         if (title in totalTimeDict):
-            print('duplicate: ' + title)
-            #print(chat)
+            print('duplicate: ' + title + '; using instead: ' + chat)
             title = chat
         assert title not in totalTimeDict
         totalTimeDict[title] = times
         sendDict[title] = send_times
         receiveDict[title] = receive_times
+        senderDict[title] = sender_times
 
-    return totalTimeDict, earliestTime, latestTime, sendDict, receiveDict
+    return totalTimeDict, earliestTime, latestTime, sendDict, receiveDict, senderDict
 
 
-def plotAllTimeSeries(totalTimeDict, sendSeries, receiveSeries, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL):
+def plotAllTimeSeries(totalTimeDict, senderSeries, outputDir, TIME_INTERVAL, MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL):
     sorted_chats = sorted(totalTimeDict, key=lambda chat: len(totalTimeDict[chat]), reverse=True)
  
     for chat in sorted_chats:
 
         times = totalTimeDict[chat]
         msg_count = len(times)
-        send_times = sendSeries[chat]
-        receive_times = receiveSeries[chat]
+        sender_times = senderSeries[chat]
 
         # get rid of weird backslashes
         if ('/' in chat):
             chat = '_'.join(chat.split('/'))
-        plotTimeSeries(times, send_times, receive_times, chat, outputDir=outputDir,
+        plotTimeSeries(times, sender_times, chat, outputDir=outputDir,
                        TIME_INTERVAL=TIME_INTERVAL, MIN_MESSAGE_COUNT=MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL=MIN_MESSAGE_INTERVAL)
     return
 
@@ -367,7 +388,7 @@ def timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, sender_name, startDate=None
     ###############
     chats = get_possible_chats(folderDir)
     print('time series')
-    allTimeSeries, earliestTime, latestTime, sendSeries, receiveSeries = getAllTimeSeriesData(
+    allTimeSeries, earliestTime, latestTime, sendSeries, receiveSeries, senderSeries = getAllTimeSeriesData(
         folderDir, chats, sender_name, startDate=startDate, endDate=endDate)
     plot = True
     plotIndividual = True
@@ -385,7 +406,7 @@ def timeSeriesAnalyzer(folderDir, MIN_MESSAGE_COUNT, sender_name, startDate=None
                                  TIME_INTERVAL=TIME_INTERVAL, MIN_MESSAGE_COUNT=MIN_MESSAGE_COUNT/2, MIN_MESSAGE_PERIOD=MIN_MESSAGE_PERIOD/2,  title='received')
 
     if (plotIndividual):
-        plotAllTimeSeries(allTimeSeries, sendSeries, receiveSeries,
+        plotAllTimeSeries(allTimeSeries, senderSeries,
                           outputDir=os.path.join(outputDir, "graphs"),
                           TIME_INTERVAL=TIME_INTERVAL, MIN_MESSAGE_COUNT=MIN_MESSAGE_COUNT, MIN_MESSAGE_INTERVAL=MIN_MESSAGE_PERIOD)
 

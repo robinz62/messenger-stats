@@ -16,8 +16,8 @@ def get_json_files(folder_path):
             json_files.append(f)
     return json_files
 
-def chatToString(chat):
-    s = chat['title'] + '\n'
+def chatToString(chat, rank):
+    s = str(rank) + '. ' + chat['title'] + '\n'
     s += 'total messages: ' + str(chat['messages']) + '\n'
     s += 'total characters (content): ' + str(chat['characters']) + '\n'
     for person in chat['indData']:
@@ -36,8 +36,10 @@ def writeDatafile(all_conversations, MIN_MESSAGE_COUNT, startDate, endDate, outp
         f.write("Messages from " + str(startDate) +
                 " until " + str(endDate) + "\n")
         f.write("______________________________________________________________\n")
+        count = 0
         for c in all_conversations:
-            f.write(chatToString(c) + '\n')
+            count += 1
+            f.write(chatToString(c, count) + '\n')
 
 
 def plotMessages(all_conversations, startDate, endDate, sortby="messages", LARGEST_CHATS_TOP_N=10, outputDir="./"):
@@ -89,11 +91,15 @@ def characterCount(messages):
             elif (h == "sticker"):
                 counter = 1
             else:
-                try:
-                    counter = len(message[h])
-                except TypeError:
-                    counter = 1
-                    #print(message)
+                if(message[h]):
+                    try:
+                        counter = len(message[h])
+                    except TypeError:
+                        counter = 1
+                        print(message)
+                else:
+                    counter = 0
+                    
 
             if (not sender in indData):
                 indData[sender] = collections.OrderedDict({"messages": 0})
@@ -146,6 +152,7 @@ def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
             chat_path = os.path.join(root_dir, chat)
             json_files = get_json_files(chat_path)
             data = {}
+            
             for json_name in json_files:
                 with open(os.path.join(root_dir, chat, json_name)) as f:
                     partial_data = json.load(f)
@@ -158,7 +165,8 @@ def largest_chats(root_dir, startDate=None, endDate=None, minMessages=0):
                 pass
             else:
                 data['messages'] = sift_timestamps(data, startDate, endDate)
-
+            
+            
             count = len(data['messages'])
             if (count < minMessages):
                 continue

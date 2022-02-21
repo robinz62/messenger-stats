@@ -72,7 +72,7 @@ def main():
     folderDir, aggreOutDir, timeOutDir = setupDirTree(
         args.folder, outputDir=args.output)
 
-    basicAnalysis = True
+    basicAnalysis = False
     print('doing basic analysis')
     if(basicAnalysis):
         largestChatAnalyzer(folderDir, MIN_MESSAGE_COUNT,
